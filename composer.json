@@ -1,0 +1,40 @@
+{
+    "name": "patslaf/da-package-zoho-2.0",
+    "description": "Interact with Zoho SDK 2.0",
+    "autoload": {
+        "psr-4": {
+            "Patslaf\\DigitalAcorn\\Zoho20\\": "src",
+            "Patslaf\\DigitalAcorn\\Zoho20\\Tests\\": "tests",
+            "Patslaf\\DigitalAcorn\\Zoho20\\Database\\Seeders\\": "database/seeders"
+        }
+    },
+    "authors": [
+        {
+            "name": "Pat",
+            "email": "dev@plaf.me"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Patslaf\\DigitalAcorn\\Zoho20\\Zoho20ServiceProvider"
+            ]
+        }
+    },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/patslaf/da-package-core"
+        }
+    ],
+    "require": {
+        "php": "^8.1.0",
+        "zohocrm/php-sdk-2.0": "^6.2",
+        "patslaf/da-package-core": "^1.0"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "require-dev": {
+        "laravel/pint": "^1.10"
+    }
+}

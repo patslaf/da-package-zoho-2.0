@@ -1,0 +1,182 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
+        "This file is @generated automatically"
+    ],
+    "content-hash": "bcccd44186b05b4ee47e6045c7d5e1b3",
+    "packages": [
+        {
+            "name": "patslaf/da-package-core",
+            "version": "v1.0.0",
+            "source": {
+                "type": "git",
+                "url": "git@github.com:patslaf/da-package-core.git",
+                "reference": "392076b98ab1d9a7ec0989bae3870f3ac2d0de24"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/patslaf/da-package-core/zipball/392076b98ab1d9a7ec0989bae3870f3ac2d0de24",
+                "reference": "392076b98ab1d9a7ec0989bae3870f3ac2d0de24",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^8.1.0"
+            },
+            "require-dev": {
+                "laravel/pint": "^1.10"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Patslaf\\DigitalAcorn\\Core\\DigitalAcornCoreServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Patslaf\\DigitalAcorn\\Core\\": "src",
+                    "Patslaf\\DigitalAcorn\\Core\\Database\\Seeders\\": "database/seeders"
+                }
+            },
+            "authors": [
+                {
+                    "name": "Pat",
+                    "email": "dev@plaf.me"
+                }
+            ],
+            "description": "Digital Acorn Core",
+            "support": {
+                "source": "https://github.com/patslaf/da-package-core/tree/v1.0.0",
+                "issues": "https://github.com/patslaf/da-package-core/issues"
+            },
+            "time": "2023-06-04T18:36:34+00:00"
+        },
+        {
+            "name": "zohocrm/php-sdk-2.0",
+            "version": "6.2.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/zoho/zohocrm-php-sdk-2.0.git",
+                "reference": "31381ec9e2579de4568a1710f33d2b7e04c2f1fb"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/zoho/zohocrm-php-sdk-2.0/zipball/31381ec9e2579de4568a1710f33d2b7e04c2f1fb",
+                "reference": "31381ec9e2579de4568a1710f33d2b7e04c2f1fb",
+                "shasum": ""
+            },
+            "require": {
+                "ext-curl": "*",
+                "ext-json": "*",
+                "php": ">=7.0"
+            },
+            "require-dev": {
+                "phpunit/phpunit": ">=5.7"
+            },
+            "type": "sdk",
+            "autoload": {
+                "psr-4": {
+                    "": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "Apache-2.0"
+            ],
+            "authors": [
+                {
+                    "name": "Zoho CRM API Team",
+                    "email": "support@zohocrm.com",
+                    "homepage": "https://www.zoho.com/crm/help/customer-support.html",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Zoho CRM API SDK for PHP",
+            "homepage": "https://github.com/zoho/zohocrm-php-sdk-2.0",
+            "support": {
+                "source": "https://github.com/zoho/zohocrm-php-sdk-2.0/tree/6.2.0"
+            },
+            "time": "2023-04-03T14:27:19+00:00"
+        }
+    ],
+    "packages-dev": [
+        {
+            "name": "laravel/pint",
+            "version": "v1.10.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/laravel/pint.git",
+                "reference": "c7a01fa9bdd79819e7a2f1ba63ac1b02e6692dbc"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/laravel/pint/zipball/c7a01fa9bdd79819e7a2f1ba63ac1b02e6692dbc",
+                "reference": "c7a01fa9bdd79819e7a2f1ba63ac1b02e6692dbc",
+                "shasum": ""
+            },
+            "require": {
+                "ext-json": "*",
+                "ext-mbstring": "*",
+                "ext-tokenizer": "*",
+                "ext-xml": "*",
+                "php": "^8.1.0"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^3.16.0",
+                "illuminate/view": "^10.5.1",
+                "laravel-zero/framework": "^10.0.2",
+                "mockery/mockery": "^1.5.1",
+                "nunomaduro/larastan": "^2.5.1",
+                "nunomaduro/termwind": "^1.15.1",
+                "pestphp/pest": "^2.4.0"
+            },
+            "bin": [
+                "builds/pint"
+            ],
+            "type": "project",
+            "autoload": {
+                "psr-4": {
+                    "App\\": "app/",
+                    "Database\\Seeders\\": "database/seeders/",
+                    "Database\\Factories\\": "database/factories/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Nuno Maduro",
+                    "email": "enunomaduro@gmail.com"
+                }
+            ],
+            "description": "An opinionated code formatter for PHP.",
+            "homepage": "https://laravel.com",
+            "keywords": [
+                "format",
+                "formatter",
+                "lint",
+                "linter",
+                "php"
+            ],
+            "support": {
+                "issues": "https://github.com/laravel/pint/issues",
+                "source": "https://github.com/laravel/pint"
+            },
+            "time": "2023-04-25T14:52:30+00:00"
+        }
+    ],
+    "aliases": [],
+    "minimum-stability": "dev",
+    "stability-flags": [],
+    "prefer-stable": true,
+    "prefer-lowest": false,
+    "platform": {
+        "php": "^8.1.0"
+    },
+    "platform-dev": [],
+    "plugin-api-version": "2.3.0"
+}
