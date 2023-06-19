@@ -8,15 +8,24 @@ use com\zoho\crm\api\record\ActionWrapper;
 use com\zoho\crm\api\record\APIException;
 use com\zoho\crm\api\record\BodyWrapper;
 use com\zoho\crm\api\record\Contacts;
+use com\zoho\crm\api\record\ConvertActionHandler;
+use com\zoho\crm\api\record\ConvertActionWrapper;
+use com\zoho\crm\api\record\ConvertBodyWrapper;
 use com\zoho\crm\api\record\DeleteRecordParam;
 use com\zoho\crm\api\record\Field;
-use com\zoho\crm\api\record\Leads;
+use com\zoho\crm\api\record\LeadConverter;
 use com\zoho\crm\api\record\RecordOperations;
 use com\zoho\crm\api\record\ResponseWrapper;
 use com\zoho\crm\api\record\SearchRecordsParam;
+use com\zoho\crm\api\record\SuccessfulConvert;
 use com\zoho\crm\api\record\SuccessResponse;
-use Exception;
+use com\zoho\crm\api\util\CommonAPIHandler;
+use com\zoho\crm\api\util\Constants;
+use Patslaf\DigitalAcorn\Zoho20\Exceptions\NoApiResponseException;
+use Patslaf\DigitalAcorn\Zoho20\Exceptions\NotApiExpectedResponseException;
+use Patslaf\DigitalAcorn\Zoho20\Exceptions\ParsedApiException;
 use Patslaf\DigitalAcorn\Zoho20\Exceptions\RecordDuplicateException;
+use Patslaf\DigitalAcorn\Zoho20\Exceptions\RecordNotFoundException;
 
 class Record extends Base
 {
@@ -32,18 +41,17 @@ class Record extends Base
         $headerInstance = new HeaderMap();
         $response = $recordOperations->getRecord($recordId, $moduleAPIName, $paramInstance, $headerInstance);
         if (! $response) {
-            throw new \Exception('Unable to retrieve response: '.$recordId);
+            throw new NoApiResponseException('Unable to retrieve response: '.$recordId);
         }
 
         if (! $response->isExpected()) {
-            throw new \Exception('Not the expected response');
+            throw new RecordNotFoundException();
         }
 
         $responseHandler = $response->getObject();
 
         if ($responseHandler instanceof APIException) {
-            $exception = $responseHandler;
-            throw new \Exception($exception->getCode()->getValue().' '.$exception->getMessage()->getValue());
+            throw new ParsedApiException($responseHandler);
         }
 
         if (! $responseHandler instanceof ResponseWrapper) {
@@ -62,6 +70,15 @@ class Record extends Base
         }
 
         return $records[0];
+    }
+
+    public function searchRecordsByEmail(string $moduleAPIName, string $email)
+    {
+        $paramInstance = new ParameterMap();
+        $paramInstance->add(SearchRecordsParam::email(), $email);
+        $records = self::searchRecords($moduleAPIName, $paramInstance);
+
+        return $records;
     }
 
     public function searchRecordsByPhone(string $moduleAPIName, string $telephone)
@@ -90,6 +107,10 @@ class Record extends Base
             //Get object from response
             $responseHandler = $response->getObject();
 
+            if ($responseHandler instanceof APIException) {
+                throw new ParsedApiException($responseHandler);
+            }
+
             if ($responseHandler instanceof ResponseWrapper) {
                 //Get the received ResponseWrapper instance
                 $responseWrapper = $responseHandler;
@@ -104,6 +125,22 @@ class Record extends Base
 
     public function createRecord(string $moduleAPIName, $recordData)
     {
+
+        if ($moduleAPIName === 'Contacts') {
+            $email = $recordData[Contacts::Email()->getApiName()] ?? null;
+
+            $matchingLeads = $this->searchRecordsByEmail('Leads', $email);
+            if ($matchingLeads) {
+                $recordId = $matchingLeads[0]->getId();
+                $contactId = $this->convertLead($recordId);
+
+                // update contact
+                $this->updateRecord('Contacts', $contactId, $recordData);
+
+                return $contactId;
+            }
+        }
+
         $recordOperations = new RecordOperations();
         $bodyWrapper = new BodyWrapper();
         $records = [];
@@ -120,11 +157,11 @@ class Record extends Base
 
         $response = $recordOperations->createRecords($moduleAPIName, $bodyWrapper, $headerInstance);
         if (! $response) {
-            throw new \Exception('Unable to retrieve response');
+            throw new NoApiResponseException('Unable to retrieve response');
         }
 
         if (! $response->isExpected()) {
-            throw new \Exception('Not the expected response');
+            throw new NotApiExpectedResponseException();
         }
 
         //Get object from response
@@ -132,14 +169,7 @@ class Record extends Base
 
         //Check if the request returned an exception
         if ($actionHandler instanceof APIException) {
-            //Get the received APIException instance
-            $exception = $actionHandler;
-            //$status =  $exception->getStatus()->getValue();
-            $code = $exception->getCode()->getValue();
-            $details = $exception->getDetails();
-            $message = $exception->getMessage()->getValue();
-
-            throw new \Exception(sprintf('Code: %s Message: %s', $code, $message));
+            throw new ParsedApiException($actionHandler);
         }
 
         if ($actionHandler instanceof ActionWrapper) {
@@ -159,18 +189,14 @@ class Record extends Base
                 }
                 //Check if the request returned an exception
                 elseif ($actionResponse instanceof APIException) {
-                    //Get the received APIException instance
-                    $exception = $actionResponse;
-                    //$status =  $exception->getStatus()->getValue();
-                    $code = $exception->getCode()->getValue();
-                    $details = $exception->getDetails();
-                    $message = $exception->getMessage()->getValue();
+                    $code = $actionResponse->getCode()->getValue();
+                    $details = $actionResponse->getDetails();
 
                     if ($code === 'DUPLICATE_DATA') {
                         throw new RecordDuplicateException($details['id']);
                     }
 
-                    throw new \Exception(sprintf('Code: %s Message: %s', $code, $message));
+                    throw new ParsedApiException($actionResponse);
                 }
             }
         }
@@ -195,11 +221,11 @@ class Record extends Base
 
         $response = $recordOperations->updateRecords($moduleAPIName, $bodyWrapper, $headerInstance);
         if (! $response) {
-            throw new \Exception('Unable to retrieve response');
+            throw new NoApiResponseException('Unable to retrieve response: '.$recordId);
         }
 
         if (! $response->isExpected()) {
-            throw new \Exception('Not the expected response');
+            throw new NotApiExpectedResponseException();
         }
 
         //Get object from response
@@ -207,14 +233,7 @@ class Record extends Base
 
         //Check if the request returned an exception
         if ($actionHandler instanceof APIException) {
-            //Get the received APIException instance
-            $exception = $actionHandler;
-            //$status =  $exception->getStatus()->getValue();
-            $code = $exception->getCode()->getValue();
-            $details = $exception->getDetails();
-            $message = $exception->getMessage()->getValue();
-
-            throw new \Exception(sprintf('Code: %s Message: %s', $code, $message));
+            throw new ParsedApiException($actionHandler);
         }
 
         if ($actionHandler instanceof ActionWrapper) {
@@ -234,18 +253,7 @@ class Record extends Base
                 }
                 //Check if the request returned an exception
                 elseif ($actionResponse instanceof APIException) {
-                    //Get the received APIException instance
-                    $exception = $actionResponse;
-                    //$status =  $exception->getStatus()->getValue();
-                    $code = $exception->getCode()->getValue();
-                    $details = $exception->getDetails();
-                    $message = $exception->getMessage()->getValue();
-
-                    if ($code === 'DUPLICATE_DATA') {
-                        return $details['id'];
-                    }
-
-                    throw new \Exception(sprintf('Code: %s Message: %s', $code, $message));
+                    throw new ParsedApiException($actionResponse);
                 }
             }
         }
@@ -263,11 +271,11 @@ class Record extends Base
         $response = $recordOperations->deleteRecord($recordId, $moduleAPIName, $paramInstance, $headerInstance);
 
         if (! $response) {
-            throw new \Exception('Unable to retrieve response');
+            throw new NoApiResponseException('Unable to retrieve response: '.$recordId);
         }
 
         if (! $response->isExpected()) {
-            throw new \Exception('Not the expected response');
+            throw new NotApiExpectedResponseException();
         }
 
         //Get object from response
@@ -275,14 +283,7 @@ class Record extends Base
 
         //Check if the request returned an exception
         if ($actionHandler instanceof APIException) {
-            //Get the received APIException instance
-            $exception = $actionHandler;
-            //$status =  $exception->getStatus()->getValue();
-            $code = $exception->getCode()->getValue();
-            $details = $exception->getDetails();
-            $message = $exception->getMessage()->getValue();
-
-            throw new \Exception(sprintf('Code: %s Message: %s', $code, $message));
+            throw new ParsedApiException($actionHandler);
         }
 
         if ($actionHandler instanceof ActionWrapper) {
@@ -302,14 +303,7 @@ class Record extends Base
                 }
                 //Check if the request returned an exception
                 elseif ($actionResponse instanceof APIException) {
-                    //Get the received APIException instance
-                    $exception = $actionResponse;
-                    //$status =  $exception->getStatus()->getValue();
-                    $code = $exception->getCode()->getValue();
-                    $details = $exception->getDetails();
-                    $message = $exception->getMessage()->getValue();
-
-                    throw new \Exception(sprintf('Code: %s Message: %s', $code, $message));
+                    throw new ParsedApiException($actionResponse);
                 }
             }
         }
@@ -317,26 +311,76 @@ class Record extends Base
 
     public function convertLead(string $recordId, string $convertTo = 'Contacts')
     {
-        // get lead
-        $lead = $this->getRecord('Leads', $recordId);
-        if (! $lead) {
-            throw new Exception('Unable to find a lead for #'.$recordId);
+        //Get instance of RecordOperations Class
+        $recordOperations = new RecordOperations();
+        //Get instance of ConvertBodyWrapper Class that will contain the request body
+        $request = new ConvertBodyWrapper();
+        //List of LeadConverter instances
+        $data = [];
+        //Get instance of LeadConverter Class
+        $record1 = new LeadConverter();
+        $record1->setOverwrite(true);
+
+        //Add Record instance to the list
+        array_push($data, $record1);
+        //Set the list to Records in BodyWrapper instance
+        $request->setData($data);
+        //Call updateRecord method that takes BodyWrapper instance, ModuleAPIName and recordId as parameter.
+
+        $handlerInstance = new CommonAPIHandler();
+        $apiPath = '';
+        $apiPath = $apiPath.('/crm/v2/Leads/');
+        $apiPath = $apiPath.(strval($recordId));
+        $apiPath = $apiPath.('/actions/convert');
+        $handlerInstance->setAPIPath($apiPath);
+        $handlerInstance->setHttpMethod(Constants::REQUEST_METHOD_POST);
+        $handlerInstance->setCategoryMethod(Constants::REQUEST_CATEGORY_CREATE);
+        $handlerInstance->setContentType('application/json');
+        $handlerInstance->setRequest($request);
+        $handlerInstance->setMandatoryChecker(true);
+        //Utility::getFields("Deals", $handlerInstance);
+        $response = $handlerInstance->apiCall(ConvertActionHandler::class, 'application/json');
+
+        if (! $response) {
+            throw new NoApiResponseException('Unable to retrieve response: '.$recordId);
         }
 
-        // save to contact
-        $data = [
-            Contacts::FirstName()->getApiName() => $lead->getKeyValue(Leads::FirstName()->getApiName()),
-            Contacts::LastName()->getApiName() => $lead->getKeyValue(Leads::LastName()->getApiName()),
-            Contacts::Phone()->getApiName() => $lead->getKeyValue(Leads::Phone()->getApiName()),
-            Contacts::Email()->getApiName() => $lead->getKeyValue(Leads::Email()->getApiName()),
-            Contacts::MailingStreet()->getApiName() => $lead->getKeyValue(Leads::Street()->getApiName()),
-            Contacts::MailingCity()->getApiName() => $lead->getKeyValue(Leads::City()->getApiName()),
-            Contacts::MailingState()->getApiName() => $lead->getKeyValue(Leads::State()->getApiName()),
-            Contacts::MailingZip()->getApiName() => $lead->getKeyValue(Leads::ZipCode()->getApiName()),
-        ];
-        $zohoId = $this->createRecord('Contacts', $data);
+        if (! $response->isExpected()) {
+            throw new NotApiExpectedResponseException();
+        }
 
-        // delete contact
-        return $this->deleteRecord('Leads', $recordId);
+        $actionHandler = $response->getObject();
+        if ($actionHandler instanceof APIException) {
+            throw new ParsedApiException($actionHandler);
+        }
+
+        if ($actionHandler instanceof ConvertActionWrapper) {
+            //Get the received ActionWrapper instance
+            $actionWrapper = $actionHandler;
+            //Get the list of obtained ActionResponse instances
+            $actionResponses = $actionWrapper->getData();
+            foreach ($actionResponses as $actionResponse) {
+                //Check if the request is successful
+                if ($actionResponse instanceof SuccessfulConvert) {
+                    $successResponse = $actionResponse;
+                    $contactId = $successResponse->getContacts();
+
+                    return $contactId;
+                }
+                //Check if the request returned an exception
+                elseif ($actionResponse instanceof APIException) {
+                    $code = $actionResponse->getCode()->getValue();
+                    $details = $actionResponse->getDetails();
+
+                    if ($code === 'DUPLICATE_DATA') {
+                        throw new RecordDuplicateException($details['id']);
+                    }
+
+                    throw new ParsedApiException($actionResponse);
+                }
+            }
+        }
+
+        throw $actionHandler;
     }
 }
