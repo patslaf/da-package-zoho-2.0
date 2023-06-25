@@ -7,6 +7,7 @@ use com\zoho\crm\api\ParameterMap;
 use com\zoho\crm\api\record\ActionWrapper;
 use com\zoho\crm\api\record\APIException;
 use com\zoho\crm\api\record\BodyWrapper;
+use com\zoho\crm\api\record\CarryOverTags;
 use com\zoho\crm\api\record\Contacts;
 use com\zoho\crm\api\record\ConvertActionHandler;
 use com\zoho\crm\api\record\ConvertActionWrapper;
@@ -320,6 +321,21 @@ class Record extends Base
         //Get instance of LeadConverter Class
         $record1 = new LeadConverter();
         $record1->setOverwrite(true);
+
+        // get tags
+        $lead = $this->getRecord("Leads", $recordId);
+        $tagsRaw = $lead->getKeyValues()['Tag'];
+        $tags = [];
+        foreach($tagsRaw as $tag) {
+            $tags[] = $tag->getName();
+        }
+
+        // set carryover tags
+        $carryOverTags = new CarryOverTags();
+        //$carryOverTags->setAccounts(["Test"]);
+        $carryOverTags->setContacts($tags);
+        //$carryOverTags->setDeals(["Test"]);
+        $record1->setCarryOverTags($carryOverTags);
 
         //Add Record instance to the list
         array_push($data, $record1);
