@@ -342,20 +342,7 @@ class Record extends Base
         //Set the list to Records in BodyWrapper instance
         $request->setData($data);
         //Call updateRecord method that takes BodyWrapper instance, ModuleAPIName and recordId as parameter.
-
-        $handlerInstance = new CommonAPIHandler();
-        $apiPath = '';
-        $apiPath = $apiPath.('/crm/v2/Leads/');
-        $apiPath = $apiPath.(strval($recordId));
-        $apiPath = $apiPath.('/actions/convert');
-        $handlerInstance->setAPIPath($apiPath);
-        $handlerInstance->setHttpMethod(Constants::REQUEST_METHOD_POST);
-        $handlerInstance->setCategoryMethod(Constants::REQUEST_CATEGORY_CREATE);
-        $handlerInstance->setContentType('application/json');
-        $handlerInstance->setRequest($request);
-        $handlerInstance->setMandatoryChecker(true);
-        //Utility::getFields("Deals", $handlerInstance);
-        $response = $handlerInstance->apiCall(ConvertActionHandler::class, 'application/json');
+        $response = $recordOperations->convertLead($recordId,$request );
 
         if (! $response) {
             throw new NoApiResponseException('Unable to retrieve response: '.$recordId);
